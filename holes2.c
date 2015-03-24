@@ -26,9 +26,7 @@ Process * lastInQue (Process * que);
 void printInfo (Process * que);
 Process * removeOne(Process* que, Process * toRemove);
 Process * moveToBack(Process * que, Process *  toMove);
-void stats(Process * que, char * mem);
-int countProcess (Process * que);
-int countHoles(char * mem);
+
 
 int main (int argc, char * argv[])
 {
@@ -50,7 +48,7 @@ int main (int argc, char * argv[])
 	{
 		memory[i]='0';
 	}
-	memory[128]='1';
+	memory[128]='x';
 
 	while(fgets(line,20,fp)!=NULL)
 	{
@@ -69,16 +67,32 @@ int main (int argc, char * argv[])
 		}
 		
 	}
+	/*printf("PRINTING QUE\n");
+	printQue(que);
+	que = removeOne(que, create('C',5,0));
+	printf("PRINTING QUE\n");
+	printQue(que);
+	*/
 	firstFit(memory,que);
 	
-	/*for(i=0;i<129;i++) 
-		printf("%c ", memory[i]);
-	printf("\n");*/
+	/*for(i=0;i<129;i++)
+		printf("%2d ", i);
+	printf("\n");
 	
+	for(i=0;i<129;i++) 
+		printf("%c ", memory[i]);
+	printf("\n");
+
+	printQue(que);
+	while(que != NULL)
+	{	
+		printf("PRINTING QUE\n");
+		que = deque(que);
+		printInfo(que);
+	}*/
+
 	free(line);	
 	free(memory);
-
-
 	return 0;
 }
 
@@ -112,7 +126,6 @@ Process * append (Process * que, Process * toAdd)
 
 	temp->next = toAdd;
 	toAdd->next = NULL;
-	//printf("***%c WAS APPENED***\n", toAdd->id);
 	return que;
 }
 
@@ -141,7 +154,7 @@ void printQue (Process * que)
 	}
 	while(temp!=NULL)
 	{
-		printf("%c   %2d   %d\n", temp->id, temp->size,temp->swaps);
+		printf("%c   %d   %d\n", temp->id, temp->size,temp->swaps);
 		temp = temp->next;
 	}
 }
@@ -176,35 +189,30 @@ void firstFit (char * memory, Process * que)
 {
 	int sum=0;
 	Process * running=NULL;
-	while(que!= NULL)
+	Process * swapQue =NULL;
+	Process * temp = que;
+	while(temp!= NULL)
 	{
-		/*
-		printf("***********************************************\nQUE\n");
-		printQue(que);
-		printf("***********************************************\nRUNNING\n");
-		printQue(running);
-		printf("***********************************************\n\n");
-		*/	
-		sum = loadProcess(memory,que);
+		printf("WHILE TEMP ISNT NULL\n");
+		sum = loadProcess(memory,temp);
 		if(sum == 1)
 		{
-			
-			running = append(running, duplicate(que));
-			stats(running,memory);
+			printf("IF ENOUGH MEM\n");
+			running = append(running, duplicate(temp));
 			
 		}
-
+		printf("BEFORE NOT ENOUGH MEM\n");
 		while (sum == 0) /*no hole big enough*/
 		{
-			//printf("IN APPENED\n");
 			int i=0;
 			char oldestID = running->id; /* gets the head of the running que as oldest*/
 			running->swaps++;/*update the swap tims right before swapping*/
-			que = append(que,duplicate(running)); /*delets running process from where ever in the que and appends it to the back*/ 
+			que = moveToBack(que,running);/*delets running process from where ever in the que and appends it to the back*/
+			printf("AFTER MOVE TO BACK\n"); 
 			que = clean(que);/*remove and processes with threee or more swaps*/
-			
+			printf("AFTER CLEANING\n");
 			running = deque(running);
-			
+			printf("AFTER DEQUGING RUN\n");
 			while(memory[i]!= oldestID)
 			{
 				i++;
@@ -215,22 +223,23 @@ void firstFit (char * memory, Process * que)
 				memory[i]='0';
 				i++;
 			}
-			sum = loadProcess(memory,que);
+
+			printf("AFTER ERASING MEMORY\n");
+			sum = loadProcess(memory,temp);
 			if(sum == 1)
 			{
-				running = append(running, duplicate(que));
-				stats(running,memory);
+				printf("IF ENOUGH MEM 2X\n");
+				running = append(running, duplicate(temp));
 			}
 		}
-
-		que = deque(que);
+		printf("DEQUGING QUE\n");
+		temp = deque(temp);
 	}
-/*
+
 	printf("RUNNING\n");
 	printQue(running);
 	printf("QUE\n");
 	printQue(que);
-	*/
 }
 
 int loadProcess (char * mem, Process * toLoad)
@@ -240,7 +249,7 @@ int loadProcess (char * mem, Process * toLoad)
 	int j=0;
 	int count=0;
 	int number =1;
-	while(mem[i]!='1')
+	while(mem[i]!='x')
 	{
 		if(mem[i]=='0')
 		{
@@ -273,7 +282,6 @@ Process * clean(Process * que)
 
 	if(temp->swaps>=3)
 	{
-		//printf("***%c WAS CLEANED***\n",que->id);
 		que=deque(que);
 		return que;
 	}
@@ -283,7 +291,6 @@ Process * clean(Process * que)
 		if(temp->next->swaps >=3)
 		{
 			Process * rm = temp->next;
-			//printf("***%c WAS CLEANED***\n",rm->id);
 			temp->next = temp->next->next;
 			free(rm);
 			return que;
@@ -294,7 +301,6 @@ Process * clean(Process * que)
 	if(temp->next == NULL && temp->swaps>=3)
 	{
 		Process * rm = temp;
-		//printf("***%c WAS CLEANED***\n",rm->id);
 		temp = NULL;
 		free(rm);
 		return que;
@@ -311,30 +317,6 @@ Process * lastInQue (Process * que)
 		temp = temp->next;
 	}
 	return temp;
-}
-
-int countProcess (Process * que)
-{
-	int i=0;
-	Process * temp = que;
-
-	while(temp != NULL)
-	{
-		i++;
-		temp = temp->next;
-	}
-	return i;
-}
-
-int countHoles(char * mem)
-{
-	int i;
-	int count = 0;
-
-	for(i=0;i<128;i++)
-	{
-		
-	}
 }
 
 
@@ -376,14 +358,6 @@ Process * moveToBack(Process * que, Process *  toMove)
 	Process * afterRemoval = removeOne(que,toMove);
 	afterRemoval = append(que,toMove);
 	return afterRemoval;
-}
-
-void stats(Process * que, char * mem)
-{
-	char * out = malloc(sizeof(char)*100);
-	sprintf(out, "%c loaded, #processes %d \n", lastInQue(que)->id, countProcess(que));
-	printf("%s\n",out);
-	free(out);
 }
 
 /* 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 

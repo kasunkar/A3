@@ -1,4 +1,4 @@
-t1:
+all:
 	gcc  holes.c functions.c -o run
-t2:
-	./run inprc.txt
+
+	gcc holes2.c -o run2
