@@ -29,6 +29,7 @@ Process * moveToBack(Process * que, Process *  toMove);
 void stats(Process * que, char * mem);
 int countProcess (Process * que);
 int countHoles(char * mem);
+double memusagse(char * mem);
 
 int main (int argc, char * argv[])
 {
@@ -70,7 +71,6 @@ int main (int argc, char * argv[])
 		
 	}
 	firstFit(memory,que);
-	
 	/*for(i=0;i<129;i++) 
 		printf("%c ", memory[i]);
 	printf("\n");*/
@@ -328,15 +328,42 @@ int countProcess (Process * que)
 
 int countHoles(char * mem)
 {
-	int i;
+	int i=0;
 	int count = 0;
 
-	for(i=0;i<128;i++)
+	while(mem[i]!= '1')
 	{
-		
+		if(mem[i] == '0' && mem[i+1]!='0')
+		{
+			count++;
+		}
+		i++;
 	}
+
+	return count;
 }
 
+double memusagse(char * mem)
+{
+	int i=0;
+	int freeCount = 0;
+	double percent=0;
+
+	while(mem[i]!= '1')
+	{
+		if(mem[i] == '0' )
+		{
+			freeCount++;
+		}
+		i++;
+	}
+
+	percent = (128-freeCount);
+	percent = percent/128;
+	percent = percent*100;
+	return percent;
+
+}
 
 Process * removeOne(Process* que, Process * toRemove)
 {
@@ -381,7 +408,7 @@ Process * moveToBack(Process * que, Process *  toMove)
 void stats(Process * que, char * mem)
 {
 	char * out = malloc(sizeof(char)*100);
-	sprintf(out, "%c loaded, #processes %d \n", lastInQue(que)->id, countProcess(que));
+	sprintf(out, "%c loaded, #processes %d, #holes %d, memusagse %.2lf\n", lastInQue(que)->id, countProcess(que), countHoles(mem), memusagse(mem));
 	printf("%s\n",out);
 	free(out);
 }
