@@ -52,14 +52,34 @@ int main (int argc, char * argv[])
 		printf("NO FILE\n");
 		return 0;
 	}
-
+	int choice;
 	char * memory = malloc(sizeof(char)*129);
 	Process * que = NULL;
 	clearMemory(memory);
 	que = enque(fp);
-	
-	nextFit(memory,que);
+	printf("Please select a number\n1. First Fit\n2. Best Fit\n3. Worst Fit\n4. Next Fit\n");
+	scanf("%d",&choice);
+	printf("%d\n",choice );
 
+	if(choice == 1)
+	{
+		printf("**********FIRST FIT***********\n");
+		firstFit(memory,que);
+	}
+	else if (choice == 2)
+	{
+		printf("***********BEST FIT************\n");
+		bestFit(memory,que);
+	}
+	else if (choice == 3)
+	{
+		printf("*********WORST FIT*************\n");
+		worstFit(memory,que);
+	}else if(choice ==4)
+	{
+		printf("***********NEXT FIT*************\n");
+		nextFit(memory,que);
+	}
 
 
 	free(memory);
@@ -134,27 +154,21 @@ void nextFit(char * memory,Process * que)
 
 		while(success== -1)
 		{
-			printf("\nSUCESS VALUE IS: %d   AT LASTINDEX: %d\n",success,lastIndex);
 			running->swaps++;
 			que = append(que,duplicate(running));
 			que = clean(que);
 			replaceMemory(memory,running->id,'0');
-			print(memory);
 			running = deque(running);
 			success = nextHole(memory,que->size,&lastIndex);
 		}
 
 		int j;
-
-
-		printf("\nSUCESS VALUE IS: %d\n",success);
 		for(j=success;j<success + que->size;j++)
 		{
 			memory[j]=que->id;
 		}
 		running = append(running,duplicate(que));
 		stats(running,memory);
-		print(memory);
 		que = deque(que);
 	}
 
@@ -301,10 +315,7 @@ void bestFit (char * memory, Process * que)
 		i++;
 		que=deque(que);
 	}
-	printf("RUNNING:\n");
-	printQue(running);
-	printf("QUE\n");
-	printQue(que);	
+	
 }
 
 void replaceMemory(char * memory, char rm, char replace)
