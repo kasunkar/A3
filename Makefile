@@ -1,2 +1,2 @@
 all:
-	gcc -Wall -ansi  holes.c functions.c -o run
+	gcc -ansi -Wall holes3.c -o x

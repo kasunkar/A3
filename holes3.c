@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 typedef struct Process Process;
 
@@ -30,70 +29,245 @@ Process * moveToBack(Process * que, Process *  toMove);
 void stats(Process * que, char * mem);
 int countProcess (Process * que);
 int countHoles(char * mem);
-double memUsagse(char * mem);
-double culMemUsagse(Process * running);
-Process *  eraseQue(Process ** que);
-Process * enque(char * infile);
-void clearMemory(char * memory);
-void checkFile(FILE * fp);
-int bestHole(char * memory,int size);
-void bestFit (char * memory, Process * que);
+double memusagse(Process * running);
+double culMemUsage(Process * running);
+int bestHole(char * mem, int size);
+void bestFit(char * memory, Process * que);
 void replaceMemory(char * memory, char rm, char replace);
-
+int worstHole(char * memory, int size);
+Process * enque(FILE * fp);
+void clearMemory(char * memory);
+void worstFit(char * memory,  Process * que);
+int nextHole (char * memory, int size,int * lastIndex);
+void nextFit(char * memory,Process * que);
 
 int main (int argc, char * argv[])
 {
+
+
+	FILE * fp= NULL;
+	fp =  fopen(argv[1],"r");
+	if(fp == NULL)
+	{
+		printf("NO FILE\n");
+		return 0;
+	}
+
 	char * memory = malloc(sizeof(char)*129);
 	Process * que = NULL;
-	Process * queBest = NULL;
 	clearMemory(memory);
+	que = enque(fp);
+	
+	nextFit(memory,que);
 
 
-/*	printf("****************************FIRST FIT*************************************\n");
-	que = enque(argv[1]);
-	firstFit(memory,que);
-	que= eraseQue(que);
-*/
-	printf("*****************************BEST FIT*************************************\n");
-	queBest = enque(argv[1]);
-	bestFit(memory,queBest);
-	que = eraseQue(&que);
-	printf("****************************FIRST FIT*************************************\n");
-	que = enque("in.txt");
-	firstFit(memory,que);
-	que= eraseQue(&que);
 
 	free(memory);
 	return 0;
 }
 
-Process * enque (char * infile)
+
+int nextHole(char * memory, int size, int *lastIndex)/*uses index of last process id on memory NOT the empty one after*/
 {
-	FILE * fp;
-	fp = fopen(infile,"r");
-	checkFile(fp);
-	Process * que=NULL;
+	int i = *lastIndex;
+	int space=0;
+	int start =-1;
+	while(i<129)
 	{
-		printf("SCREW\n");
+		
+		if(memory[i]=='0')
+		{
+			space++;
+		}
+
+		if(memory[i]!='0')
+		{
+			space = 0;
+		}
+
+
+		if(space >= size)
+		{
+			start = i-space;
+			*lastIndex = i+1;
+			return start+1;
+		}
+		i++;
 	}
+
+	i=0;
+	space =0;
+	while(i<129)
+	{
+		if (memory[i]=='0')
+		{ 
+			space ++;
+		}
+
+		if(memory[i]!='0')
+		{
+			space = 0;
+		}
+		if(space>=size)
+		{
+			start = i-space;
+			*lastIndex = i+1;
+			return start+1;
+		}
+		i++;
+	}
+	return -1;
+
+}
+
+
+
+
+void nextFit(char * memory,Process * que)
+{
+	int success =-1;
+	int lastIndex = -1;
+	Process * running=NULL;
+	while(que!=NULL)
+	{
+		success = nextHole(memory,que->size,&lastIndex);
+
+		while(success== -1)
+		{
+			printf("\nSUCESS VALUE IS: %d   AT LASTINDEX: %d\n",success,lastIndex);
+			running->swaps++;
+			que = append(que,duplicate(running));
+			que = clean(que);
+			replaceMemory(memory,running->id,'0');
+			print(memory);
+			running = deque(running);
+			success = nextHole(memory,que->size,&lastIndex);
+		}
+
+		int j;
+
+
+		printf("\nSUCESS VALUE IS: %d\n",success);
+		for(j=success;j<success + que->size;j++)
+		{
+			memory[j]=que->id;
+		}
+		running = append(running,duplicate(que));
+		stats(running,memory);
+		print(memory);
+		que = deque(que);
+	}
+
+}
+
+
+
+
+
+
+
+
+
+void worstFit(char * memory,  Process * que)
+{
+	Process * running = NULL;
+	int success = 0;
+	int i;
+	while(que!= NULL)
+	{
+		
+		success = worstHole(memory,que->size);
+		while(success < 0)
+		{
+
+			running->swaps++;
+			que = append(que,duplicate(running));
+			que = clean(que);
+			replaceMemory(memory,running->id,'0');
+			running = deque(running);
+			success = worstHole(memory,que->size);
+		}
+
+		for(i=success;i<success+que->size;i++)
+		{
+			memory[i]= que->id;
+		}
+		running = append(running,duplicate(que));
+		stats(running,memory);
+		que = deque(que);
+	}
+
+}
+
+
+int worstHole(char * memory,int size)
+{
+
+	int i=0;
+	int space = 0;
+	int worst=0;
+	int start=-1;
+	while(i<129)
+	{
+		
+		if(memory[i]=='0') 
+		{	
+			space++;
+		}
+		
+		if(memory[i]!= '0')
+		{
+			
+			if(space>=worst && space>=size)
+			{
+
+				worst = space;
+				start = i-space;
+			}
+			space=0;
+		}
+		i++;
+	}
+
+	return start;
+
+}
+
+void clearMemory(char * memory)
+{ 
+	int i;
+	for(i=0;i<129;i++)
+	{
+		memory[i]='0';
+	}
+	memory[128]='1';
+}
+
+Process * enque(FILE * fp)
+{
+	Process * que;
 	char * line = malloc(sizeof(char)*20);
-	printf("BEFORE while\n");
 	while(fgets(line,20,fp)!=NULL)
 	{
-		printf("IN WHILE\n");
 		char tempID;
 		int tempSize;
 
 		sscanf(line,"%c %d",&tempID, &tempSize);
-		que = append(que, create(tempID,tempSize,0));
-		printQue(que);
+
+		if (que == NULL)
+		{
+			que = create(tempID, tempSize,0);
+		}
+		else
+		{
+			que = append(que, create(tempID,tempSize,0));
+		}
 		
 	}
-	fclose(fp);
+
 	free(line);
 	return que;
 }
-
 
 void bestFit (char * memory, Process * que)
 {
@@ -182,33 +356,6 @@ int bestHole(char * memory,int size)
 	return start;
 }
 
-/* 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 
-    0  0  0  0  0  0  0  0  0  0  a  a  a  a  0  0  0  0  0  0  b
-*/
-
-
-void checkFile(FILE * fp)
-{
-	if(fp==NULL)
-	{
-		printf("FILE EMPTY\n");
-		exit(0);
-	}
-}
-void clearMemory(char * memory)
-{
-	int i;
-	for(i=0;i<129;i++)
-	{
-		memory[i]='0';
-	}
-	memory[128]='1';
-
-}
-
-
-
-
 Process * create (char name, int newSize, int timesSwapped)
 {
 	Process * newProcess;
@@ -253,8 +400,6 @@ Process * deque (Process * que)
 	}
 
 	que = que->next;
-
-	
 	free(temp);
 	return que;
 }
@@ -265,9 +410,7 @@ void printQue (Process * que)
 	if(que == NULL)
 	{
 		printf("EMPTY QUE\n");
-		return;
 	}
-
 	while(temp!=NULL)
 	{
 		printf("%c   %2d   %d\n", temp->id, temp->size,temp->swaps);
@@ -288,7 +431,7 @@ void printInfo(Process * que)
 void print (char * mem)
 {
 	int i;
-	for(i=0;i<129;i++)
+	for(i=0;i<128;i++)
 	{
 		printf("%c  ", mem[i]);
 
@@ -325,7 +468,6 @@ void firstFit (char * memory, Process * que)
 
 		while (sum == 0) /*no hole big enough*/
 		{
-			
 			int i=0;
 			char oldestID = running->id; /* gets the head of the running que as oldest*/
 			running->swaps++;/*update the swap tims right before swapping*/
@@ -354,6 +496,7 @@ void firstFit (char * memory, Process * que)
 
 		que = deque(que);
 	}
+
 }
 
 int loadProcess (char * mem, Process * toLoad)
@@ -395,7 +538,7 @@ Process * clean(Process * que)
 
 	if(temp->swaps>=3)
 	{
-	
+		
 		que=deque(que);
 		return que;
 	}
@@ -463,46 +606,6 @@ int countHoles(char * mem)
 	return count;
 }
 
-double memUsagse(char * mem)
-{
-	int i=0;
-	int freeCount = 0;
-	double percent=0;
-
-	while(mem[i]!= '1')
-	{
-		if(mem[i] == '0' )
-		{
-			freeCount++;
-		}
-		i++;
-	}
-
-	percent = (128-freeCount);
-	percent = percent/128;
-	percent = percent*100;
-	return percent;
-
-}
-
-double culMemUsagse(Process * running)
-{
-	Process * temp =running;
-	double sum = 0;
-	double count =0;
-	double percent=0;
-
-	while(temp != NULL)
-	{
-		count ++;
-		sum = sum + temp->size;
-		temp = temp->next;
-	}
-	percent =  sum/count;
-	return percent;
-
-}
-
 
 
 Process * removeOne(Process* que, Process * toRemove)
@@ -545,23 +648,41 @@ Process * moveToBack(Process * que, Process *  toMove)
 	return afterRemoval;
 }
 
-Process * eraseQue(Process ** que)
-{
-	while((*que)!= NULL)
-	{
-		Process * rm = *que;
-		(*que) = (*que)->next;
-		free(rm);
-	}
-
-	(*que)=NULL;
-	return *que;
-}
-
 void stats(Process * que, char * mem)
 {
 	char * out = malloc(sizeof(char)*100);
-	sprintf(out, "%c loaded, #processes %d, #holes %d, memusagse %.2lf, cumulative mem %.2lf\n", lastInQue(que)->id, countProcess(que), countHoles(mem), memUsagse(mem), culMemUsagse(que));
+	sprintf(out, "%c loaded, #processes %d, #holes %d, memusagse %.2lf, culmemusage %.2lf \n", lastInQue(que)->id, countProcess(que), countHoles(mem), memusagse(que), culMemUsage(que));
 	printf("%s\n",out);
 	free(out);
 }
+
+double memusagse(Process * running)
+{
+
+	Process * temp = running;
+	double usage =0;
+	double percent=0;
+
+	while(temp!= NULL)
+	{
+
+		usage = usage + temp->size;
+		temp =temp->next;
+	}
+	percent = (usage/128)*100;
+	return percent;
+
+}
+
+
+double culMemUsage(Process * running)
+{
+	double sum =0;
+
+	return sum;
+
+}
+
+/* 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 
+    0  0  0  0  0  0  0  0  0  0  a  a  a  a  0  0  0  0  0  0  b
+*/
